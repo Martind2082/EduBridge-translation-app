@@ -1,0 +1,34 @@
+html {
+    padding: 0.5rem;
+}
+
+.arrow {
+    position: absolute;
+    top: 60vh;
+    /* z-index: 10; */
+    width: 5rem;
+    animation: flyInFromLeft 1s ease-in-out forwards;
+}
+@keyframes flyInFromLeft {
+    0% {
+        transform: translateX(12rem);
+    }
+    100% {
+        transform: translateX(37rem);
+    }
+}
+
+.arrowatyou {
+    position: absolute;
+    top: 60vh;
+    width: 5rem;
+    animation: flyInFromRight 1s ease-in-out forwards;
+}
+@keyframes flyInFromRight {
+    0% {
+        transform: translateX(37rem);
+    }
+    100% {
+        transform: translateX(10rem);
+    }
+}
