@@ -30,11 +30,11 @@ const agents = [
 ]
 
 async function action(link) {
-    const browser = await puppeteer.launch({headless: false});
+    const browser = await puppeteer.launch({headless: true});
     const page = await browser.newPage();
     await page.setUserAgent(
         // agents[Math.floor(Math.random() * agents.length - 1)]
-        agents[6]
+        agents[2]
       );
     await page.goto(link.toString())
         .catch((err) => {
