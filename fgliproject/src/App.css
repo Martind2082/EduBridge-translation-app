@@ -1,11 +1,10 @@
-html {
-    padding: 0.5rem;
-}
+/* html {
+    /* padding: 0.5rem; */
+/* } */
 
 .arrow {
-    position: absolute;
+    position: fixed;
     top: 60vh;
-    /* z-index: 10; */
     width: 5rem;
     animation: flyInFromLeft 1s ease-in-out forwards;
 }
@@ -19,7 +18,7 @@ html {
 }
 
 .arrowatyou {
-    position: absolute;
+    position: fixed;
     top: 60vh;
     width: 5rem;
     animation: flyInFromRight 1s ease-in-out forwards;
@@ -35,4 +34,8 @@ html {
 
 input:focus {
     outline: none
+}
+
+.hover {
+    cursor: pointer;
 }

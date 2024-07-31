@@ -5,7 +5,10 @@ import {GoogleButton} from 'react-google-button'
 import { auth, db } from './firebase'
 import {GoogleAuthProvider, onAuthStateChanged, signInWithPopup, signOut} from 'firebase/auth';
 import { collection, deleteDoc, doc, getDoc, onSnapshot, orderBy, query, serverTimestamp, setDoc, updateDoc } from 'firebase/firestore';
-import { FaArrowRight } from "react-icons/fa";
+import { FaArrowRight} from "react-icons/fa";
+import { HiXMark } from "react-icons/hi2";
+
+
 
 
 function App() {
@@ -31,6 +34,7 @@ function App() {
   const translateoutputref = useRef();
   const youtubevideosref = useRef();
   const gethelpfulvideosbuttonref = useRef();
+  const creatorgameroompeopleref = useRef();
   let quizletdata;
 
   function signinwithgoogle() {
@@ -87,6 +91,7 @@ function App() {
           youtubevideosref.current.children[2].src = "";
           youtubevideosref.current.children[2].style = "height: 0px";
         }
+        youtubevideosref.current.append(button);
 
         gethelpfulvideosbuttonref.current.textContent = "Get Helpful Videos";
 
@@ -94,6 +99,9 @@ function App() {
   }
 
   function submit() {
+    if (link.current.value.length == 0) {
+      return;
+    }
     let loadingscreen = document.createElement('img');
     loadingscreen.src = "https://s1.aigei.com/src/img/gif/8f/8f911964f5824fe393694a665b1b4d6a.gif?e=1735488000&token=P7S2Xpzfz11vAkASLTkfHN7Fw-oOZBecqeJaxypL:S58WVBQ-Zs8CIrNVK4bTz6ykgzk=";
     data.current.append(loadingscreen);
@@ -111,13 +119,24 @@ function App() {
         setDoc(doc(db, User.email, "data"), {
           data: quizletdata
         })
+
+        let container = document.createElement('div');
+        container.style = "width: 80%; display: flex; justify-content: space-evenly; border: 1px solid black; padding-top: 1rem; padding-bottom; 1rem;";
+        let term = document.createElement('div');
+        let definition = document.createElement('div');
+        term.textContent = "Term";
+        definition.textContent = "Definition";
+        container.append(term);
+        container.append(definition);
+        data.current.append(container);
+
         //displays the flashcards on screen term and definition side by side
         for (let i = 0; i < quizletdata.length; i+=2) {
           let maindiv = document.createElement("div");
           let div1 = document.createElement("div");
           let div2 = document.createElement("div");
 
-          maindiv.style = 'display: flex; width: 50%; justify-content: space-evenly; border: 1px solid black; padding-top: 1rem; padding-bottom: 1rem;';
+          maindiv.style = 'display: flex; width: 80%; justify-content: space-evenly; border: 1px solid black; padding-top: 1rem; padding-bottom: 1rem;';
           div1.textContent = response.data.quizletinfo[i];
           div2.textContent = response.data.quizletinfo[i + 1];
 
@@ -133,8 +152,19 @@ function App() {
   //see available games
   function seegames() {
     activegamesref.current.style = "display: block";
-    activegamesref.current.textContent = "There are currently no games";
+    for (let i = 1; i < activegamesref.current.children.length; i++) {
+      activegamesref.current.children[i].remove();
+    }
+    let nogames = document.createElement('div');
+    nogames.textContent = "There are currently no games";
+    nogames.style = "width: 100%; text-align: center";
+    activegamesref.current.append(nogames);
     onSnapshot(collection(db, "games"), (snapshot) => {
+      if (snapshot.docs.length != 0) {
+        if (activegamesref.current.children[1].textContent == "There are currently no games") {
+          activegamesref.current.children[1].remove();
+        }
+      }
       snapshot.docs.forEach(game => {
         let main = document.createElement('div');
         main.style = "display: flex; height: 4rem; justify-content: space-between; align-items: center; padding-left: 0.5rem; padding-right: 0.5rem";
@@ -156,6 +186,7 @@ function App() {
 
         //after user hits join game
         button.onclick = () => {
+          activegamesref.current.style.display = "none";
           setDoc(doc(db, `game ${game.data().email}`, game.data().email), {
             health: 150,
             name: game.data().name,
@@ -181,11 +212,22 @@ function App() {
           onSnapshot(collection(db, `game ${game.data().email}`), (snapshot) => {
             snapshot.docs.forEach(person => {
               let persondiv = document.createElement('div');
-              persondiv.textContent = person.data().name;
+              persondiv.style = "margin-left: 2rem; display: flex; margin-top: 1rem; margin-bottom: 1rem;";
+
+              let name = document.createElement('div');
+              name.textContent = person.data().name;
+              name.style = "font-size: 1.5rem";
+
+              let img = document.createElement('img');
+              img.src = person.data().pfp;
+              img.style = "width: 3rem; border-radius: 50%; margin-right: 1rem";
+
+              persondiv.append(img);
+              persondiv.append(name);
               joinergameroomref.current.append(persondiv);
             })
 
-            for (let i = 1; i < joinergameroomref.current.children.length - 2; i++) {
+            for (let i = 3; i < joinergameroomref.current.children.length; i++) {
               joinergameroomref.current.children[i].remove();
             }
           })
@@ -214,19 +256,42 @@ function App() {
     setOpponent("fishchipsy123@gmail.com");
 
     creatorgameroomref.current.style = "display: block";
+
     let div = document.createElement('div');
-    div.textContent = User.displayName;
-    creatorgameroomref.current.append(div);
+    div.style = "display: flex; margin-left: 2rem; margin-top: 1rem; margin-bottom: 1rem;";
+
+    let name = document.createElement('div');
+    name.textContent = User.displayName;
+    name.style = "font-size: 1.5rem";
+
+    let img = document.createElement('img');
+    img.style = "width: 3rem; border-radius: 50%; margin-right: 1rem;";
+    img.src = User.photoURL;
+    div.append(img);
+    div.append(name);
+    creatorgameroompeopleref.current.append(div);
     
     onSnapshot(collection(db, `game ${User.email}`), (snapshot) => {
       if (snapshot.docs.length !== 0) {
-        creatorgameroomref.current.children[0].remove();
+        creatorgameroompeopleref.current.children[0].remove();
 
         snapshot.docs.forEach(person => {
           let persondiv = document.createElement('div');
-          persondiv.textContent = person.data().name;
           persondiv.classList.add(person.data().email);
-          creatorgameroomref.current.append(persondiv);
+          persondiv.style = "display: flex; margin-left: 2rem; margin-top: 1rem; margin-bottom: 1rem;";
+
+          let personname = document.createElement('div');
+          personname.textContent = person.data().name;
+          personname.style = "font-size: 1.5rem";
+
+          let personimg = document.createElement('img');
+          personimg.style = "width: 3rem; border-radius: 50%; margin-right: 1rem;";
+          personimg.src = person.data().pfp;
+
+          persondiv.append(personimg);
+          persondiv.append(personname);
+
+          creatorgameroompeopleref.current.append(persondiv);
           // if (person.data().email != User.email) {
           //   setOpponent(person.data().email);
           //   setTimeout(() => {
@@ -236,59 +301,14 @@ function App() {
           // }
         })
 
-        for (let i = 0; i < creatorgameroomref.current.children.length - 2; i++) {
-          creatorgameroomref.current.children[i].remove();
-        }
-        
-        //after someone joins the creator's room, the button to start the game will appear
-        setTimeout(() => {
-          // if (creatorgameroomref.current.children[creatorgameroomref.current.children.length - 1].textContent == "End Game") {
-          //   creatorgameroomref.current.children[creatorgameroomref.current.children.length - 1].remove();
-          //   creatorgameroomref.current.children[creatorgameroomref.current.children.length - 2].remove();
-          // }
-          let button = document.createElement('button');
-          button.style = "color: white; font-weight: bold; background: lightgreen; padding: 0.3rem; border-radius: 15px";
-          button.textContent = "Start Game";
-          creatorgameroomref.current.append(button);
-          button.onclick = () => {
-            onSnapshot(collection(db, `game ${User.email}`), (snapshot) => {
-              snapshot.docs.forEach(person => {
-                updateDoc(doc(db, `game ${User.email}`, person.data().email), {
-                  active: "true"
-                })
-              })
-            })
-          }
-
-          let endgame = document.createElement('button');
-          endgame.style = "color: white; font-weight: bold; background: #de351b; padding: 0.3rem; border-radius: 15px";
-          endgame.textContent = "End Game";
-          creatorgameroomref.current.append(endgame);
-          endgame.onclick = () => {
-            deleteDoc(doc(db, "games", User.email))
-            onSnapshot(collection(db, `game ${User.email}`), (snapshot) => {
-              snapshot.docs.forEach(person => {
-                updateDoc(doc(db, `game ${User.email}`, person.data().email), {
-                  open: "false"
-                })
-              })
-            })
-            document.querySelectorAll('.lobby')[0].style.display = "none";
-
-            // setTimeout(() => {
-            //   onSnapshot(collection(db, `game ${User.email}`), (snapshot) => {
-            //     snapshot.docs.forEach(person => {
-            //       deleteDoc(doc(db, `game ${User.email}`, person.data().email))
-            //     })
-            //   })
-            // }, 2000);
-          }
-        }, 1000);
+        // for (let i = 0; i < creatorgameroomref.current.children.length - 2; i++) {
+        //   creatorgameroomref.current.children[i].remove();
+        // }
 
       }
     })
   }
-let zzz = false;
+let gameendedvariable = false;
   useEffect(() => {
     if (Leader != "") {
       onSnapshot(collection(db, `game ${Leader}`), (snapshot) => {
@@ -297,7 +317,7 @@ let zzz = false;
           joinergameroomref.current.style = "display: none";
         }
 
-        if (snapshot.docs[0].data().active == "true" && zzz == false) {
+        if (snapshot.docs[0].data().active == "true" && gameendedvariable == false) {
           gameroomref.current.style = "display: block";
           document.querySelectorAll('.lobby')[0].style.display = "none";
           document.querySelectorAll('.lobby')[1].style.display = "none";
@@ -311,13 +331,17 @@ let zzz = false;
               gameroomref.current.style = "display: none";
               if (Leader == User.email) {
                 document.querySelectorAll('.lobby')[0].style.display = "block";
-                document.querySelectorAll('.lobby')[0].textContent = "";
+                for (let i = 0; i < creatorgameroompeopleref.current.length - 3; i++) {
+                  creatorgameroompeopleref.current.children[i].remove();
+                }
               } else {
                 document.querySelectorAll('.lobby')[1].style.display = "block";
-                document.querySelectorAll('.lobby')[1].textContent = "";
+                for (let i = joinergameroomref.current.children.length; i >= 3; i--) {
+                  joinergameroomref.current.children[i].remove();
+                }
               }
               setgameended("true");
-              zzz = true;
+              gameendedvariable = true;
             }
             opponentnameref.current.textContent = data.data().name;
             opponenthealthref.current.textContent = data.data().health;
@@ -327,13 +351,17 @@ let zzz = false;
               gameroomref.current.style = "display: none";
               if (Leader == User.email) {
                 document.querySelectorAll('.lobby')[0].style.display = "block";
-                document.querySelectorAll('.lobby')[0].textContent = "";
+                for (let i = 0; i < creatorgameroompeopleref.current.length - 3; i++) {
+                  creatorgameroompeopleref.current.children[i].remove();
+                }
               } else {
                 document.querySelectorAll('.lobby')[1].style.display = "block";
-                document.querySelectorAll('.lobby')[1].textContent = "";
+                for (let i = joinergameroomref.current.children.length; i >= 3; i--) {
+                  joinergameroomref.current.children[i].remove();
+                }
               }
               setgameended("true");
-              zzz = true;
+              gameendedvariable = true;
             }
             playerhealthref.current.textContent = data.data().health;
               setTimeout(() => {
@@ -685,8 +713,9 @@ let zzz = false;
   }
   useEffect(() => {
     setTimeout(() => {
-      
-
+      if (User == undefined) {
+        return;
+      }
       for (const code in countries) {
         let option = document.createElement('option');
         option.innerText = countries[code];
@@ -700,19 +729,56 @@ let zzz = false;
         translatefromref.current.append(option);
       }
 
-    }, 500);
+    }, 900);
   }, [])
+
+  function startgame() {
+    onSnapshot(collection(db, `game ${User.email}`), (snapshot) => {
+      snapshot.docs.forEach(person => {
+        updateDoc(doc(db, `game ${User.email}`, person.data().email), {
+          active: "true"
+        })
+      })
+    })
+  }
+  function endgame() {
+    deleteDoc(doc(db, "games", User.email))
+    onSnapshot(collection(db, `game ${User.email}`), (snapshot) => {
+      snapshot.docs.forEach(person => {
+        updateDoc(doc(db, `game ${User.email}`, person.data().email), {
+          open: "false"
+        })
+      })
+    })
+    document.querySelectorAll('.lobby')[0].style.display = "none";
+    creatorgameroomref.current.style.display = "none";
+
+    setTimeout(() => {
+      onSnapshot(collection(db, `game ${User.email}`), (snapshot) => {
+        snapshot.docs.forEach(person => {
+          deleteDoc(doc(db, `game ${User.email}`, person.data().email))
+        })
+      })
+    }, 3000);
+  }
 
   return (
     <div>
       {
         !User ? <div>
-          <p>Please sign in</p>
-          <GoogleButton onClick={signinwithgoogle}/>
+          <div>
+            <img className='absolute w-[100%] h-[100vh]' src="https://img.freepik.com/free-vector/watercolor-international-human-solidarity-day-background_23-2149837203.jpg?t=st=1722405069~exp=1722408669~hmac=2faeb2906c688071cee6bb5b1e97461922a42c64df22a0f90ed54a04bf4da6bb&w=1060"/>
+            <div className='absolute w-[70%] h-[50vh] flex flex-col items-center justify-center left-1/2 top-[40%] -translate-x-1/2 -translate-y-1/2'>
+              <p className='font-bold text-[3rem]'>Welcome!</p>
+              <p className='text-center text-[2rem]'>This website is dedicated to helping first generation low income students by promoting equality in access to education and breaking language barriers that first generation students often face</p>
+              <p className='mt-8 text-[1.3rem]'>Sign in to get started</p>
+              <GoogleButton onClick={signinwithgoogle}/>
+            </div>
+          </div>
         </div> :
-        <div>
+        <div className='p-[0.5rem]'>
           {/* this div will show when the game starts */}
-          <div className='hidden absolute w-[98%] h-[99vh] bg-gray-400' ref={gameroomref}>
+          <div className='hidden fixed w-[98%] h-[99vh] bg-gray-400' ref={gameroomref}>
             <div ref={gameroomquestionsref}></div>
             <div ref={gameroomcastleref}>
               <div className='flex w-full justify-evenly'>
@@ -734,20 +800,21 @@ let zzz = false;
           <div className='flex justify-between w-full h-8 items-center mb-4'>
             <div className='ml-4 flex items-center'>
               <img className='rounded-[50%] w-8' src={User.photoURL}/>
-              <p className='ml-4'>Welcome {User.displayName}</p>
+              <p className='ml-4'>Welcome {User.displayName}!</p>
             </div>
             <button onClick={signout} className='bg-gray-400 py-1 px-2.5 rounded-[12px] mr-4'>Sign out</button>
           </div>
 
-          <div className='w-[70%] flex flex-col items-center bg-blue-400 ml-[15%] pt-4 rounded-[20px] mb-8'>
-            <div className='w-[90%]'>
-              <input ref={translateinputref} placeholder='Enter Text' className='pl-2 rounded-[5px] border border-1 border-black h-[5rem] w-1/2' type="text" />
-              <input ref={translateoutputref} placeholder='Translation' className='pl-2 rounded-[5px] border border-1 border-black h-[5rem] w-1/2' type="text" />
+          <div className='text-center w-[80%] ml-[10%] mb-4 text-[1.5rem] mt-8'>If you are more comfortable in a language other from English, translate a topic into a language that you are comfortable with and generate videos related to that topic in your preferred language!</div>
+          <div className='w-[70%] flex flex-col items-center bg-gradient-to-r from-blue-400 to-blue-300 ml-[15%] pt-4 rounded-[20px] mb-8'>
+            <div className='w-[90%] flex justify-evenly'>
+              <input ref={translateinputref} placeholder='Enter Text' className='pl-2 rounded-[5px] border border-1 border-black h-[5rem] w-[49%]' type="text" />
+              <input ref={translateoutputref} placeholder='Translation' className='pl-2 rounded-[5px] border border-1 border-black h-[5rem] w-[49%]' type="text" />
             </div>
-            <div className='w-[60%] flex justify-evenly items-center'>
-              <select ref={translatefromref} className='w-[8rem]'></select>
+            <div className='w-[60%] flex justify-evenly items-center mt-2 mb-2'>
+              <select ref={translatefromref} className='w-[8rem] p-[0.2rem] rounded-[10px]'></select>
               <FaArrowRight/>
-              <select ref={translatetoref} className='w-[8rem]'></select>
+              <select ref={translatetoref} className='w-[8rem] p-[0.2rem] rounded-[10px]'></select>
             </div>
             <button onClick={translate} className='bg-yellow-500 w-[60%] my-4 px-4 py-[0.2rem] font-bold text-white rounded-[15px]'>Translate</button>
             <button ref={gethelpfulvideosbuttonref} onClick={getyoutubevideo} className='bg-green-400 font-bold text-white rounded-[15px] py-[0.4rem] px-4 w-[60%] mb-4'>Get Helpful Videos</button>
@@ -758,11 +825,13 @@ let zzz = false;
             <iframe className='h-0' allowFullScreen></iframe>
           </div>
 
-          <div>
-            <input className='border-black border border-solid w-[70%]' ref={link} placeholder='link'/>
-            <button className='bg-green-400 p-1 rounded-lg ml-4' onClick={submit}>Enter</button>
+          <div className='w-[90%] ml-[5%] text-[1.5rem] text-center mt-8 mb-4'>Free alternative to Quizlet premium! Enter the link of the quizlet you want to study and study for free. Includes a study game you can play with a friend where the goal is to destroy your friend's castle by answering questions correctly.</div>
+          <div className='flex ml-8'>
+              <input className='border-black border border-solid w-[70%] rounded-[5px] pl-2 py-[0.5rem]' ref={link} placeholder='Enter Quizlet Link'/>
+              <button className='bg-green-400 px-[4rem] py-[0.6rem] rounded-[15px] ml-4 font-bold text-white' onClick={submit}>Enter</button>
           </div>
-          <div className='border-2 border-black my-8 flex flex-col items-center h-[20rem] overflow-auto' ref={data}></div>
+          <div className='mt-8 mb-4 text-[1.5rem] text-center'>Flashcards</div>
+          <div className='border-2 border-black w-[80%] ml-[10%] rounded-[20px] mb-8 flex flex-col items-center h-[20rem] overflow-auto' ref={data}></div>
 
           <button onClick={test} className='bg-blue-500 font-bold px-4 py-2 rounded-[15px] text-white block mb-4'>Test</button>
           <button onClick={creategame} className='bg-green-400 px-4 py-2 font-bold text-white rounded-[15px]'>Create Game</button>
@@ -770,15 +839,24 @@ let zzz = false;
           <button onClick={seegames} className='bg-green-400 px-4 py-2 font-bold text-white rounded-[15px]'>Join a Game</button>
           
           {/* menu that shows all avaiable games */}
-          <div className='hidden w-[40%] h-[40vh] border-2 border-black my-8 pt-2' ref={activegamesref}></div>
+          <div className='hidden fixed w-[40%] h-[50vh] bg-gray-200 border-2 border-black rounded-[15px] my-8 pt-2 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 overflow-y-auto' ref={activegamesref}>
+            <HiXMark onClick={() => {activegamesref.current.style.display = "none"}} className='text-[2rem] hover'/>
+          </div>
 
           {/* room opens for game creator after clicking create game */}
-          <div className='lobby hidden w-[90%] h-[60vh] bg-blue-400 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2' ref={creatorgameroomref}>
-            <p>Waiting for others to join</p>
+          <div className='lobby hidden fixed w-[90%] h-[60vh] bg-blue-400 rounded-[15px] top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2' ref={creatorgameroomref}>
+            <p className='text-[2rem] mt-4 text-center'>Waiting for others to join</p>
+            <div ref={creatorgameroompeopleref}>
+
+            </div>
+            <div>
+              <button onClick={startgame} className='text-white font-bold bg-green-500 py-2 px-4 rounded-[15px] mx-8'>Start Game</button>
+              <button onClick={endgame} className='text-white font-bold bg-red-500 px-4 py-2 rounded-[15px]'>End Game</button>
+            </div>
           </div>
 
           {/* room opens for game joiner after clicking join game */}
-          <div className='lobby hidden w-[90%] h-[60vh] bg-blue-400 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2' ref={joinergameroomref}>
+          <div className='lobby hidden w-[90%] h-[60vh] bg-blue-400 fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2' ref={joinergameroomref}>
             <p className='font-bold text-[1.5rem] text-center'>Waiting for game leader to start the game</p>
           </div>
 
