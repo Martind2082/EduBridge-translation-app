@@ -19,6 +19,14 @@ app.get('/results', (req, res) => {
         })
 })
 
+app.get('/youtube', (req, res) => {
+    let link = req.query.link;
+    getyoutube(link)
+        .then((arraylinks) => {
+            res.send({arraylinks: arraylinks})
+        })
+})
+
 const agents = [
     'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36',
     "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36",
@@ -54,4 +62,29 @@ async function action(link) {
     console.log('info', quizletinfo);
     browser.close();
     return quizletinfo;
+}
+
+
+async function getyoutube(link) {
+    const browser = await puppeteer.launch({headless: true});
+    const page = await browser.newPage();
+    await page.setUserAgent(
+        agents[2]
+      );
+    await page.goto(link.toString())
+    .catch((err) => {
+        console.log('THERE IS AN ERROR: ' + err);
+        browser.close();
+        return;
+    })
+    const getinfo = await page.evaluate(() => {
+        let arr = [];
+        const info = document.querySelectorAll('ytd-video-renderer');
+        arr.push(info[0].children[0].children[0].children[0].href);
+        arr.push(info[1].children[0].children[0].children[0].href);
+        arr.push(info[2].children[0].children[0].children[0].href);
+        return arr;
+    })
+    browser.close();
+    return getinfo;
 }

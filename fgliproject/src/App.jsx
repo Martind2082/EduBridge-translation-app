@@ -5,7 +5,7 @@ import {GoogleButton} from 'react-google-button'
 import { auth, db } from './firebase'
 import {GoogleAuthProvider, onAuthStateChanged, signInWithPopup, signOut} from 'firebase/auth';
 import { collection, deleteDoc, doc, getDoc, onSnapshot, orderBy, query, serverTimestamp, setDoc, updateDoc } from 'firebase/firestore';
-import {BsXLg} from 'react-icons/bs'
+import { FaArrowRight } from "react-icons/fa";
 
 
 function App() {
@@ -25,6 +25,12 @@ function App() {
   const playerhealthref = useRef();
   const opponenthealthref = useRef();
   const testref = useRef();
+  const translatefromref = useRef();
+  const translatetoref = useRef();
+  const translateinputref = useRef();
+  const translateoutputref = useRef();
+  const youtubevideosref = useRef();
+  const gethelpfulvideosbuttonref = useRef();
   let quizletdata;
 
   function signinwithgoogle() {
@@ -39,11 +45,53 @@ function App() {
       return unsub;
     })
 
-
-
     function signout() {
       signOut(auth);
     }
+
+  function getyoutubevideo() {
+    let search = translateoutputref.current.value;
+    if (search.length == 0) {
+      return;
+    }
+    gethelpfulvideosbuttonref.current.textContent = "Loading...";
+    const options = {
+      method: 'GET',
+      url: "http://localhost:8000/youtube",
+      params: {link: `https://www.youtube.com/results?search_query=${search}`}
+    }
+    axios.request(options)
+      .catch(err => console.log(err))
+      .then(response => {
+        let code1 = response.data.arraylinks[0].split('&')[0].split('=')[1];
+        let code2 = response.data.arraylinks[1].split('&')[0].split('=')[1];
+        let code3 = response.data.arraylinks[2].split('&')[0].split('=')[1];
+        youtubevideosref.current.children[0].src = `https://www.youtube.com/embed/${code1}`;
+        youtubevideosref.current.children[0].style = "width: 50%; height: 20rem; margin-bottom: 1rem;";
+
+        youtubevideosref.current.children[1].src = `https://www.youtube.com/embed/${code2}`;
+        youtubevideosref.current.children[1].style = "width: 50%; height: 20rem; margin-bottom: 1rem;";
+
+        youtubevideosref.current.children[2].src = `https://www.youtube.com/embed/${code3}`;
+        youtubevideosref.current.children[2].style = "width: 50%; height: 20rem; margin-bottom: 1rem;";
+
+        let button = document.createElement('button');
+        button.textContent = "Clear Videos";
+        button.style = "background: red; font-weight: bold; color: white; border-radius: 15px; padding: 0.5rem; margin-top: 1rem; margin-bottom: 1rem;";
+        button.onclick = () => {
+          button.remove();
+          youtubevideosref.current.children[0].src = "";
+          youtubevideosref.current.children[0].style = "height: 0px";
+          youtubevideosref.current.children[1].src = "";
+          youtubevideosref.current.children[1].style = "height: 0px";
+          youtubevideosref.current.children[2].src = "";
+          youtubevideosref.current.children[2].style = "height: 0px";
+        }
+
+        gethelpfulvideosbuttonref.current.textContent = "Get Helpful Videos";
+
+      })
+  }
 
   function submit() {
     let loadingscreen = document.createElement('img');
@@ -80,6 +128,8 @@ function App() {
         }
       })
   }
+
+
   //see available games
   function seegames() {
     activegamesref.current.style = "display: block";
@@ -383,10 +433,9 @@ let zzz = false;
   }, [Leader])
 
   function test() {
-    onSnapshot(collection(db, User.email), (snapshot) => {
-      quizletdata = snapshot.docs[0].data().data;
-    })
-    setTimeout(() => {      
+      if (!quizletdata) {
+        return;
+      }    
       testref.current.style.display = "block";
 
       const oddIndexes = quizletdata.map((_, index) => index).filter(index => index % 2 !== 0);
@@ -394,12 +443,10 @@ let zzz = false;
         const j = Math.floor(Math.random() * (i + 1));
         [oddIndexes[i], oddIndexes[j]] = [oddIndexes[j], oddIndexes[i]];
       }
-      console.log(oddIndexes);
       let arr = [];
       oddIndexes.forEach(num => {
         arr.push(quizletdata[num]);
       })
-      console.log(arr);
 
       let num = Math.ceil(oddIndexes.length/6);
       for (let i = 0; i < num; i++) {
@@ -489,7 +536,6 @@ let zzz = false;
           main.append(button);
           button.onclick = () => {
             for (let i = 0; i < 4; i++) {
-              console.log(quizletdata[oddIndexes[main.children[i].children[1].classList[0]]-1]);
               if (main.children[i].children[0].textContent == quizletdata[oddIndexes[main.children[i].children[1].classList[0]]-1]) {
                 main.children[i].children[1].style.border = "2px solid green";
               } else {
@@ -513,7 +559,6 @@ let zzz = false;
         testref.current.append(main);
         input.onkeydown = (e) => {
           if (e.key == "Enter") {
-            console.log(quizletdata[oddIndexes[i]].toLowerCase());
             if (input.value.toLowerCase() == quizletdata[oddIndexes[i]].toLowerCase()) {
               input.style.border = "2px solid green";
             } else {
@@ -531,8 +576,132 @@ let zzz = false;
         testref.current.textContent = "";
         testref.current.style = "display: none";
       }
-    }, 1000);
   }
+
+  const countries = {
+    "am-ET": "Amharic",
+    "ar-SA": "Arabic",
+    "be-BY": "Bielarus",
+    "bem-ZM": "Bemba",
+    "bi-VU": "Bislama",
+    "bjs-BB": "Bajan",
+    "bn-IN": "Bengali",
+    "bo-CN": "Tibetan",
+    "br-FR": "Breton",
+    "bs-BA": "Bosnian",
+    "ca-ES": "Catalan",
+    "cop-EG": "Coptic",
+    "cs-CZ": "Czech",
+    "cy-GB": "Welsh",
+    "da-DK": "Danish",
+    "dz-BT": "Dzongkha",
+    "de-DE": "German",
+    "dv-MV": "Maldivian",
+    "el-GR": "Greek",
+    "en-GB": "English",
+    "es-ES": "Spanish",
+    "et-EE": "Estonian",
+    "eu-ES": "Basque",
+    "fa-IR": "Persian",
+    "fi-FI": "Finnish",
+    "fn-FNG": "Fanagalo",
+    "fo-FO": "Faroese",
+    "fr-FR": "French",
+    "gl-ES": "Galician",
+    "gu-IN": "Gujarati",
+    "ha-NE": "Hausa",
+    "he-IL": "Hebrew",
+    "hi-IN": "Hindi",
+    "hr-HR": "Croatian",
+    "hu-HU": "Hungarian",
+    "id-ID": "Indonesian",
+    "is-IS": "Icelandic",
+    "it-IT": "Italian",
+    "ja-JP": "Japanese",
+    "kk-KZ": "Kazakh",
+    "km-KM": "Khmer",
+    "kn-IN": "Kannada",
+    "ko-KR": "Korean",
+    "ku-TR": "Kurdish",
+    "ky-KG": "Kyrgyz",
+    "la-VA": "Latin",
+    "lo-LA": "Lao",
+    "lv-LV": "Latvian",
+    "men-SL": "Mende",
+    "mg-MG": "Malagasy",
+    "mi-NZ": "Maori",
+    "ms-MY": "Malay",
+    "mt-MT": "Maltese",
+    "my-MM": "Burmese",
+    "ne-NP": "Nepali",
+    "niu-NU": "Niuean",
+    "nl-NL": "Dutch",
+    "no-NO": "Norwegian",
+    "ny-MW": "Nyanja",
+    "ur-PK": "Pakistani",
+    "pau-PW": "Palauan",
+    "pa-IN": "Panjabi",
+    "ps-PK": "Pashto",
+    "pis-SB": "Pijin",
+    "pl-PL": "Polish",
+    "pt-PT": "Portuguese",
+    "rn-BI": "Kirundi",
+    "ro-RO": "Romanian",
+    "ru-RU": "Russian",
+    "sg-CF": "Sango",
+    "si-LK": "Sinhala",
+    "sk-SK": "Slovak",
+    "sm-WS": "Samoan",
+    "sn-ZW": "Shona",
+    "so-SO": "Somali",
+    "sq-AL": "Albanian",
+    "sr-RS": "Serbian",
+    "sv-SE": "Swedish",
+    "sw-SZ": "Swahili",
+    "ta-LK": "Tamil",
+    "te-IN": "Telugu",
+    "tet-TL": "Tetum",
+    "tg-TJ": "Tajik",
+    "th-TH": "Thai",
+    "ti-TI": "Tigrinya",
+    "tk-TM": "Turkmen",
+    "tl-PH": "Tagalog",
+    "tn-BW": "Tswana",
+    "to-TO": "Tongan",
+    "tr-TR": "Turkish",
+    "uk-UA": "Ukrainian",
+    "uz-UZ": "Uzbek",
+    "vi-VN": "Vietnamese",
+    "wo-SN": "Wolof",
+    "xh-ZA": "Xhosa",
+    "yi-YD": "Yiddish",
+    "zu-ZA": "Zulu"
+}
+  function translate() {
+    let apiurl = `https://api.mymemory.translated.net/get?q=${translateinputref.current.value}&langpair=${translatefromref.current.value}|${translatetoref.current.value}`;
+    axios.get(apiurl).then(res => {
+      translateoutputref.current.value = res.data.responseData.translatedText;
+    })
+  }
+  useEffect(() => {
+    setTimeout(() => {
+      
+
+      for (const code in countries) {
+        let option = document.createElement('option');
+        option.innerText = countries[code];
+        option.value = code;
+        translatetoref.current.append(option);
+      }
+      for (const code in countries) {
+        let option = document.createElement('option');
+        option.innerText = countries[code];
+        option.value = code;
+        translatefromref.current.append(option);
+      }
+
+    }, 500);
+  }, [])
 
   return (
     <div>
@@ -569,6 +738,26 @@ let zzz = false;
             </div>
             <button onClick={signout} className='bg-gray-400 py-1 px-2.5 rounded-[12px] mr-4'>Sign out</button>
           </div>
+
+          <div className='w-[70%] flex flex-col items-center bg-blue-400 ml-[15%] pt-4 rounded-[20px] mb-8'>
+            <div className='w-[90%]'>
+              <input ref={translateinputref} placeholder='Enter Text' className='pl-2 rounded-[5px] border border-1 border-black h-[5rem] w-1/2' type="text" />
+              <input ref={translateoutputref} placeholder='Translation' className='pl-2 rounded-[5px] border border-1 border-black h-[5rem] w-1/2' type="text" />
+            </div>
+            <div className='w-[60%] flex justify-evenly items-center'>
+              <select ref={translatefromref} className='w-[8rem]'></select>
+              <FaArrowRight/>
+              <select ref={translatetoref} className='w-[8rem]'></select>
+            </div>
+            <button onClick={translate} className='bg-yellow-500 w-[60%] my-4 px-4 py-[0.2rem] font-bold text-white rounded-[15px]'>Translate</button>
+            <button ref={gethelpfulvideosbuttonref} onClick={getyoutubevideo} className='bg-green-400 font-bold text-white rounded-[15px] py-[0.4rem] px-4 w-[60%] mb-4'>Get Helpful Videos</button>
+          </div>
+          <div className='w-full flex flex-col items-center' ref={youtubevideosref}>
+            <iframe className='h-0' allowFullScreen></iframe>
+            <iframe className='h-0' allowFullScreen></iframe>
+            <iframe className='h-0' allowFullScreen></iframe>
+          </div>
+
           <div>
             <input className='border-black border border-solid w-[70%]' ref={link} placeholder='link'/>
             <button className='bg-green-400 p-1 rounded-lg ml-4' onClick={submit}>Enter</button>
