@@ -27,14 +27,6 @@ app.get('/youtube', (req, res) => {
         })
 })
 
-app.get('/translate', (req, res) => {
-    let text = req.query.text;
-    gettranslate(text)
-        .then(translatedtext => {
-            res.send({translatedtext: translatedtext})
-        })
-})
-
 const agents = [
     'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36',
     "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36",
@@ -92,24 +84,6 @@ async function getyoutube(link) {
         arr.push(info[1].children[0].children[0].children[0].href);
         arr.push(info[2].children[0].children[0].children[0].href);
         return arr;
-    })
-    browser.close();
-    return getinfo;
-}
-
-async function gettranslate(text) {
-    const browser = await puppeteer.launch({headless: false});
-    const page = await browser.newPage();
-    await page.setUserAgent(
-        agents[2]
-      );
-    await page.goto("https://www.google.com/search?q=google%20translate")
-    await page.type(document.querySelectorAll('textarea')[1], text)
-    await page.click(document.querySelectorAll('.target-language')[0])
-    await page.type(document.querySelector('#tl_list-search-box'), "vietnamese")
-    await page.keyboard.press('Enter');
-    const getinfo = await page.evaluate(() => {
-        return document.querySelector('#tw-target-text-container').textContent;
     })
     browser.close();
     return getinfo;
