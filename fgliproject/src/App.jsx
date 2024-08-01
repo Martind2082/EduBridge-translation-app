@@ -7,6 +7,7 @@ import {GoogleAuthProvider, onAuthStateChanged, signInWithPopup, signOut} from '
 import { collection, deleteDoc, doc, getDoc, onSnapshot, orderBy, query, serverTimestamp, setDoc, updateDoc } from 'firebase/firestore';
 import { FaArrowRight} from "react-icons/fa";
 import { HiXMark } from "react-icons/hi2";
+import { GoArrowLeft, GoArrowRight } from "react-icons/go";
 
 
 
@@ -35,6 +36,9 @@ function App() {
   const youtubevideosref = useRef();
   const gethelpfulvideosbuttonref = useRef();
   const creatorgameroompeopleref = useRef();
+  const castlehealthref = useRef();
+  const learnref = useRef();
+  const joinergameroomrefpeople = useRef();
   let quizletdata;
 
   function signinwithgoogle() {
@@ -49,10 +53,23 @@ function App() {
       return unsub;
     })
 
-    function signout() {
-      signOut(auth);
-    }
+  function signout() {
+    signOut(auth);
+  }
 
+  function clickthis() {
+    const options = {
+      method: 'GET',
+      url: "http://localhost:8000/translate",
+      params: {text: "hello everyone"}
+    }
+    axios.request(options)
+      .catch(err => console.log(err))
+      .then(response => {
+        console.log(response);
+      })
+  }
+  
   function getyoutubevideo() {
     let search = translateoutputref.current.value;
     if (search.length == 0) {
@@ -151,10 +168,8 @@ function App() {
 
   //see available games
   function seegames() {
-    activegamesref.current.style = "display: block";
-    for (let i = 1; i < activegamesref.current.children.length; i++) {
-      activegamesref.current.children[i].remove();
-    }
+    activegamesref.current.style.display = "block";
+    activegamesref.current.textContent = "";
     let nogames = document.createElement('div');
     nogames.textContent = "There are currently no games";
     nogames.style = "width: 100%; text-align: center";
@@ -207,9 +222,10 @@ function App() {
           setLeader(game.data().email);
           setOpponent(game.data().email);
 
-          joinergameroomref.current.style = "display: block";
+          joinergameroomref.current.style.display = "block";
 
           onSnapshot(collection(db, `game ${game.data().email}`), (snapshot) => {
+            joinergameroomrefpeople.current.textContent = "";
             snapshot.docs.forEach(person => {
               let persondiv = document.createElement('div');
               persondiv.style = "margin-left: 2rem; display: flex; margin-top: 1rem; margin-bottom: 1rem;";
@@ -224,12 +240,8 @@ function App() {
 
               persondiv.append(img);
               persondiv.append(name);
-              joinergameroomref.current.append(persondiv);
+              joinergameroomrefpeople.current.append(persondiv);
             })
-
-            for (let i = 3; i < joinergameroomref.current.children.length; i++) {
-              joinergameroomref.current.children[i].remove();
-            }
           })
 
         }
@@ -253,9 +265,9 @@ function App() {
     })
 
     setLeader(User.email);
-    setOpponent("fishchipsy123@gmail.com");
 
-    creatorgameroomref.current.style = "display: block";
+    creatorgameroomref.current.style.display = "block";
+    // creatorgameroompeopleref.current.textContent = "";
 
     let div = document.createElement('div');
     div.style = "display: flex; margin-left: 2rem; margin-top: 1rem; margin-bottom: 1rem;";
@@ -272,8 +284,14 @@ function App() {
     creatorgameroompeopleref.current.append(div);
     
     onSnapshot(collection(db, `game ${User.email}`), (snapshot) => {
-      if (snapshot.docs.length !== 0) {
-        creatorgameroompeopleref.current.children[0].remove();
+      if (snapshot.docs.length !== 1) {
+        creatorgameroompeopleref.current.textContent = "";
+
+        if (snapshot.docs[0].data().email != User.email) {
+          setOpponent(snapshot.docs[0].data().email)
+        } else {
+          setOpponent(snapshot.docs[1].data().email)
+        }
 
         snapshot.docs.forEach(person => {
           let persondiv = document.createElement('div');
@@ -308,37 +326,53 @@ function App() {
       }
     })
   }
+
+useEffect(() => {
+  if (gameended == "true") {
+    updateDoc(doc(db, `game ${User.email}`, User.email), {
+      active: "false"
+    })
+    updateDoc(doc(db, `game ${User.email}`, Opponent), {
+      active: "false"
+    })
+  }
+}, [gameended])
+
 let gameendedvariable = false;
   useEffect(() => {
-    if (Leader != "") {
+    if (Leader != "" && Opponent != "" && gameended != "true") {
       onSnapshot(collection(db, `game ${Leader}`), (snapshot) => {
-        if (snapshot.docs[0].data().open == "false") {
-          joinergameroomref.current.textContent = "";
-          joinergameroomref.current.style = "display: none";
+        if (gameendedvariable) {
+          return;
+        }
+        if (gameended == "true") {
+          console.log('IS TRUE');
+          return;
         }
 
         if (snapshot.docs[0].data().active == "true" && gameendedvariable == false) {
-          gameroomref.current.style = "display: block";
+          gameroomref.current.style.display = "block";
           document.querySelectorAll('.lobby')[0].style.display = "none";
           document.querySelectorAll('.lobby')[1].style.display = "none";
 
           console.log("Opponent: ", Opponent);
           getDoc(doc(db, `game ${Leader}`, Opponent)).then(data => {
-            if (gameended != "true" && data.data().health == 0) {
+            if (gameended != "true" && data.data().health <= 0) {
               if (gameroomref.current.style.display == "none") {
                 return;
               }
-              gameroomref.current.style = "display: none";
+              console.log('ZERO');
+              gameroomref.current.style.display = "none";
+              updateDoc(doc(db, `game ${User.email}`, User.email), {
+                active: "false"
+              })
+              updateDoc(doc(db, `game ${User.email}`, Opponent), {
+                active: "false"
+              })
               if (Leader == User.email) {
                 document.querySelectorAll('.lobby')[0].style.display = "block";
-                for (let i = 0; i < creatorgameroompeopleref.current.length - 3; i++) {
-                  creatorgameroompeopleref.current.children[i].remove();
-                }
               } else {
                 document.querySelectorAll('.lobby')[1].style.display = "block";
-                for (let i = joinergameroomref.current.children.length; i >= 3; i--) {
-                  joinergameroomref.current.children[i].remove();
-                }
               }
               setgameended("true");
               gameendedvariable = true;
@@ -347,18 +381,21 @@ let gameendedvariable = false;
             opponenthealthref.current.textContent = data.data().health;
           })
           getDoc(doc(db, `game ${Leader}`, User.email)).then(data => {
-            if (data.data().health == 0) {
-              gameroomref.current.style = "display: none";
+            if (gameended != "true" && data.data().health <= 0) {
+              // if (gameroomref.current.style.display == "none") {
+              //   return;
+              // }
+              updateDoc(doc(db, `game ${User.email}`, User.email), {
+                active: "false",
+              })
+              updateDoc(doc(db, `game ${User.email}`, Opponent), {
+                active: "false",
+              })
+              gameroomref.current.style.display = "none";
               if (Leader == User.email) {
                 document.querySelectorAll('.lobby')[0].style.display = "block";
-                for (let i = 0; i < creatorgameroompeopleref.current.length - 3; i++) {
-                  creatorgameroompeopleref.current.children[i].remove();
-                }
               } else {
                 document.querySelectorAll('.lobby')[1].style.display = "block";
-                for (let i = joinergameroomref.current.children.length; i >= 3; i--) {
-                  joinergameroomref.current.children[i].remove();
-                }
               }
               setgameended("true");
               gameendedvariable = true;
@@ -430,6 +467,9 @@ let gameendedvariable = false;
 
               document.querySelectorAll('.answeroption').forEach(button => {
                 button.onclick = () => {
+                  if (gameendedvariable == true) {
+                    return;
+                  } 
                   if (button.textContent == data.data().data[arr[randomnum]]) {
                     console.log('CORRECT');
 
@@ -458,7 +498,8 @@ let gameendedvariable = false;
         }
       })
     }
-  }, [Leader])
+  })
+  //Leader, Opponent, gameended
 
   function test() {
       if (!quizletdata) {
@@ -526,6 +567,7 @@ let gameendedvariable = false;
             term.textContent = quizletdata[oddIndexes[j] - 1];
             div.append(term);
             let definition = document.createElement('div');
+            definition.classList.add('hover');
             definition.style = "border: 1px dashed black; min-width: 7rem; margin-left: 1rem; overflow: auto; padding-left: 0.2rem; padding-right: 0.2rem";
             div.append(definition);
             main.append(div);
@@ -602,7 +644,7 @@ let gameendedvariable = false;
       testref.current.append(exit);
       exit.onclick = () => {
         testref.current.textContent = "";
-        testref.current.style = "display: none";
+        testref.current.style.display = "none";
       }
   }
 
@@ -713,7 +755,7 @@ let gameendedvariable = false;
   }
   useEffect(() => {
     setTimeout(() => {
-      if (User == undefined) {
+      if (!User) {
         return;
       }
       for (const code in countries) {
@@ -729,27 +771,36 @@ let gameendedvariable = false;
         translatefromref.current.append(option);
       }
 
-    }, 900);
-  }, [])
+    }, 800);
+  }, [User])
 
   function startgame() {
+    // if (!Opponent) {
+    //   console.log('hi')
+    //   return;
+    // }
+    // if (castlehealthref.current.value == "cannotbe") {
+    //   console.log('cannot be');
+    //   return;
+    // }
+    console.log('helloooooooooooooooo');
+    updateDoc(doc(db, `game ${User.email}`, User.email), {
+      health: castlehealthref.current.value
+    })
+    updateDoc(doc(db, `game ${User.email}`, Opponent), {
+      health: castlehealthref.current.value
+    })
     onSnapshot(collection(db, `game ${User.email}`), (snapshot) => {
       snapshot.docs.forEach(person => {
         updateDoc(doc(db, `game ${User.email}`, person.data().email), {
-          active: "true"
+          active: "true",
         })
       })
     })
   }
+
   function endgame() {
     deleteDoc(doc(db, "games", User.email))
-    onSnapshot(collection(db, `game ${User.email}`), (snapshot) => {
-      snapshot.docs.forEach(person => {
-        updateDoc(doc(db, `game ${User.email}`, person.data().email), {
-          open: "false"
-        })
-      })
-    })
     document.querySelectorAll('.lobby')[0].style.display = "none";
     creatorgameroomref.current.style.display = "none";
 
@@ -760,6 +811,202 @@ let gameendedvariable = false;
         })
       })
     }, 3000);
+  }
+
+  function learn() {
+    if (!quizletdata) {
+      return;
+    }
+      let learndata = quizletdata;
+      learnref.current.style.display = "block";
+      let div = document.createElement('div');
+      div.style = "width: 70%; margin-left: 15%;";
+      let div2 = document.createElement('div');
+      div2.style = "display: flex; width: 70%; margin-left: 15%; align-items: center; justify-content: center; margin-top: 1rem;";
+      let term = document.createElement('div');
+      term.style = "border: 1px solid black; text-align: center; font-size: 1.5rem; padding-top: 1rem; padding-bottom: 1rem;";
+      let input = document.createElement('input');
+      input.placeholder = "Enter answer";
+      input.style = "width: 30rem; padding: 0.3rem; margin-left: 1rem; border-radius: 10px;";
+      let button = document.createElement('button');
+      button.textContent = "Reveal Answer";
+      button.style = "background: gray; font-weight: bold; padding: 0.3rem; border-radius: 15px; margin-left: 1rem; width: 10rem;";
+      let star = document.createElement('img');
+      star.style = "width: 2rem;"
+      star.classList.add('hover');
+      star.src = "../images/star.png";
+      let div3 = document.createElement('div');
+      div3.style = "width: 70%; display: flex; justify-content: space-between; margin-left: 15%; margin-top: 1rem;";
+      let next = document.createElement('button');
+      let back = document.createElement('button');
+      next.textContent = "Next";
+      next.classList.add('hover');
+      back.textContent = "Back";
+      back.classList.add('hover');
+      next.style = "background: lightgreen; padding: 0.3rem; border-radius: 10px;";
+      back.style = "background: lightgreen; padding: 0.3rem; border-radius: 10px;";
+      div3.append(back);
+      div3.append(next);
+
+      let i = 0;
+      term.textContent = learndata[i];
+      div.append(term);
+      div2.append(star);
+      div2.append(input);
+      div2.append(button);
+
+      let starredtitle = document.createElement('div');
+      starredtitle.textContent = "Starred Terms";
+      starredtitle.style = "width: 100%; text-align: center; font-size: 1.2rem; margin-top: 2rem";
+      let starred = document.createElement('div');
+      starred.style = "width: 70%; margin-left: 15%; height: 20rem; background: lightblue; text-align: center; border-radius: 15px; font-size: 1.1rem; margin-top: 0.5rem; padding-top: 1rem;";
+
+      let questionsleft = document.createElement('div');
+      questionsleft.style = "font-size: 1.1rem; margin-left: 3rem; margin-bottom: 1rem;";
+      questionsleft.textContent = `Question ${(i/2)+1} of ${learndata.length/2}`;
+
+      learnref.current.append(questionsleft);
+      learnref.current.append(div);
+      learnref.current.append(div2);
+      learnref.current.append(div3);
+      learnref.current.append(starredtitle);
+      learnref.current.append(starred);
+      
+      let starredonly = document.createElement('button');
+      starredonly.textContent = "Practice with starred terms only";
+      starredonly.style = "border-radius: 10px; padding-top: 0.2rem; padding-bottom: 0.2rem; padding-left: 1.5rem; padding-right: 1rem; background: #58b9f5; font-weight: bold; color: white; margin-top: 2rem; width: 50%; margin-left: 25%; margin-bottom: 2rem;";
+
+      learnref.current.append(starredonly);
+
+      let exit = document.createElement('button');
+      exit.textContent = "Exit";
+      exit.style = "background: red; padding-top: 0.5rem; padding-bottom: 0.5rem; padding-left: 3rem; padding-right: 3rem; font-weight: bold; color: white; margin-bottom: 2rem; margin-left: 48%; font-size: 1.5rem; border-radius: 15px; width: 40%; margin-left: 30%";
+      learnref.current.append(exit);
+
+      exit.onclick = () => {
+        learnref.current.textContent = "";
+        learnref.current.style.display = "none";
+      }
+
+      next.onclick = () => {
+        if (i == learndata.length - 2) {
+          i = 0;
+        } else {
+          i+=2;
+        }
+        term.textContent = learndata[i];
+        input.value = "";
+        input.style.border = "1px solid black";
+        button.textContent = "Reveal Answer";
+        questionsleft.textContent = `Question ${(i/2)+1} of ${learndata.length/2}`;
+      }
+      back.onclick = () => {
+        if (i == 0) {
+            i = learndata.length - 2
+          } else {
+            i-=2;
+          }
+          term.textContent = learndata[i];
+          input.value = "";
+          input.style.border = "1px solid black";
+          button.textContent = "Reveal Answer";
+          questionsleft.textContent = `Question ${(i/2)+1} of ${learndata.length/2}`;
+      }
+      
+
+
+      star.onclick = () => {
+        setDoc(doc(db, `star ${User.email}`, learndata[i]), {
+          term: learndata[i],
+          number: i
+        })
+      }
+      onSnapshot(collection(db, `star ${User.email}`), (snapshot) => {
+        starred.textContent = "";
+        snapshot.docs.forEach(doc => {
+          let div = document.createElement('div');
+          div.style = "width: 100%; display: flex; justify-content: space-evenly; margin-top: 0.5rem; margin-bottom: 0.5rem;";
+          div.id = doc.data().number
+          let term = document.createElement('div');
+          let remove = document.createElement('button');
+          remove.style = "background: gray; padding: 0.2rem; border-radius: 10px";
+          term.textContent = doc.data().term;
+          remove.textContent = "Remove";
+
+          div.append(term);
+          div.append(remove);
+          starred.append(div);
+
+          remove.onclick = () => {
+            deleteDoc(doc(db, `star ${User.email}`, term.textContent))
+          }
+
+        })
+      })
+  
+      input.onkeydown = (e) => {
+        if (e.key == "Enter") {
+          if (input.value.length != 0) {
+            if (learndata[i+1].replace(/[()]/g, '').toLowerCase() == input.value.replace(/[()]/g, '').toLowerCase()) {
+              input.style.border = "2px solid green";
+              if (i == learndata.length - 2) {
+                i = 0;
+              } else {
+                i+=2;
+              }
+              setTimeout(() => {
+                term.textContent = learndata[i];
+                input.value = "";
+                input.style.border = "1px solid black";
+                button.textContent = "Reveal Answer";
+                questionsleft.textContent = `Question ${(i/2)+1} of ${learndata.length/2}`;
+              }, 600);
+            } else {
+              input.style.border = "2px solid red";
+            }
+          }
+        }
+      }
+
+      starredonly.onclick = () => {
+        if (starredonly.textContent == "Practice with starred terms only") {
+          starredonly.textContent = "Practice with all terms";
+          learndata = [];
+          for (let i = 0; i < starred.children.length; i++) {
+            learndata.push(starred.children[i].children[0].textContent);
+            learndata.push(quizletdata[(starred.children[i].id) - -1]);
+          }
+          i = 0;
+          term.textContent = learndata[i];
+          input.value = "";
+          input.style.border = "1px solid black";
+          button.textContent = "Reveal Answer";
+          questionsleft.textContent = `Question ${(i/2)+1} of ${learndata.length/2}`;
+        } else {
+          starredonly.textContent = "Practice with starred terms only";
+          learndata = quizletdata;
+          i = 0;
+          term.textContent = learndata[i];
+          input.value = "";
+          input.style.border = "1px solid black";
+          button.textContent = "Reveal Answer";
+          questionsleft.textContent = `Question ${(i/2)+1} of ${learndata.length/2}`;
+        }
+      }
+
+      button.onclick = () => {
+        if (button.textContent == "Reveal Answer") {
+          console.log(learndata);
+          button.textContent = learndata[i+1];
+        } else {
+          button.textContent = "Reveal Answer";
+        }
+      }
+  }
+
+  function leavegame() {
+    deleteDoc(doc(db, `game ${Leader}`, User.email))
+    joinergameroomref.current.style.display = "none";
   }
 
   return (
@@ -776,14 +1023,14 @@ let gameendedvariable = false;
             </div>
           </div>
         </div> :
-        <div className='p-[0.5rem]'>
+        <div>
           {/* this div will show when the game starts */}
-          <div className='hidden fixed w-[98%] h-[99vh] bg-gray-400' ref={gameroomref}>
+          <div className='hidden fixed w-[100%] h-[101vh] bg-gray-400 mt-[-2%]' ref={gameroomref}>
             <div ref={gameroomquestionsref}></div>
             <div ref={gameroomcastleref}>
               <div className='flex w-full justify-evenly'>
-                <img className='w-[15rem] h-[15rem] z-10' src="../images/castle.png"/>
-                <img className='w-[15rem] h-[15rem] z-10' src="../images/castle.png"/>
+                <img className='w-[15rem] h-[15rem] z-1000' src="../images/castle.png"/>
+                <img className='w-[15rem] h-[15rem] z-1000' src="../images/castle.png"/>
               </div>
               <div className='flex w-full justify-evenly h-[5rem]'>
                 <div className='w-[10rem] font-bold text-yellow-500 text-center'>You</div>
@@ -795,9 +1042,10 @@ let gameendedvariable = false;
               </div>
             </div>
           </div>
-          <div ref={testref} className='hidden w-full bg-gray-300 h-[99vh] overflow-y-scroll overflow-x-hidden pt-8'>
-          </div>
-          <div className='flex justify-between w-full h-8 items-center mb-4'>
+
+          <div ref={learnref} className='hidden fixed w-full bg-gray-300 h-[100vh] pt-8 z-20 mt-[-2%] overflow-x-hidden overflow-y-scroll'></div>
+          <div ref={testref} className='hidden fixed w-full bg-gray-300 h-[99vh] overflow-y-scroll overflow-x-hidden pt-8 mt-[-2%]'></div>
+          <div className='flex justify-between w-full h-8 items-center mb-4 mt-4'>
             <div className='ml-4 flex items-center'>
               <img className='rounded-[50%] w-8' src={User.photoURL}/>
               <p className='ml-4'>Welcome {User.displayName}!</p>
@@ -805,6 +1053,7 @@ let gameendedvariable = false;
             <button onClick={signout} className='bg-gray-400 py-1 px-2.5 rounded-[12px] mr-4'>Sign out</button>
           </div>
 
+          <button onClick={clickthis}>click this</button>
           <div className='text-center w-[80%] ml-[10%] mb-4 text-[1.5rem] mt-8'>If you are more comfortable in a language other from English, translate a topic into a language that you are comfortable with and generate videos related to that topic in your preferred language!</div>
           <div className='w-[70%] flex flex-col items-center bg-gradient-to-r from-blue-400 to-blue-300 ml-[15%] pt-4 rounded-[20px] mb-8'>
             <div className='w-[90%] flex justify-evenly'>
@@ -833,10 +1082,12 @@ let gameendedvariable = false;
           <div className='mt-8 mb-4 text-[1.5rem] text-center'>Flashcards</div>
           <div className='border-2 border-black w-[80%] ml-[10%] rounded-[20px] mb-8 flex flex-col items-center h-[20rem] overflow-auto' ref={data}></div>
 
-          <button onClick={test} className='bg-blue-500 font-bold px-4 py-2 rounded-[15px] text-white block mb-4'>Test</button>
-          <button onClick={creategame} className='bg-green-400 px-4 py-2 font-bold text-white rounded-[15px]'>Create Game</button>
-          <p>or</p>
-          <button onClick={seegames} className='bg-green-400 px-4 py-2 font-bold text-white rounded-[15px]'>Join a Game</button>
+          <button onClick={test} className='bg-blue-500 font-bold ml-4 px-4 py-2 rounded-[15px] text-white mb-4'>Test</button>
+          <button onClick={learn} className='bg-blue-500 font-bold ml-4 px-4 py-2 rounded-[15px] text-white mb-4'>Learn</button>
+          <br></br>
+          <button onClick={creategame} className='bg-green-400 ml-4 px-4 py-2 font-bold text-white rounded-[15px]'>Create Game</button>
+          <span className='mx-8'>or</span>
+          <button onClick={seegames} className='bg-green-400 mb-[5rem] px-4 py-2 font-bold text-white rounded-[15px]'>Join a Game</button>
           
           {/* menu that shows all avaiable games */}
           <div className='hidden fixed w-[40%] h-[50vh] bg-gray-200 border-2 border-black rounded-[15px] my-8 pt-2 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 overflow-y-auto' ref={activegamesref}>
@@ -846,9 +1097,16 @@ let gameendedvariable = false;
           {/* room opens for game creator after clicking create game */}
           <div className='lobby hidden fixed w-[90%] h-[60vh] bg-blue-400 rounded-[15px] top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2' ref={creatorgameroomref}>
             <p className='text-[2rem] mt-4 text-center'>Waiting for others to join</p>
-            <div ref={creatorgameroompeopleref}>
-
-            </div>
+            <div ref={creatorgameroompeopleref}></div>
+            <select className='ml-8 mb-6 p-2 rounded-[10px] hover' ref={castlehealthref}>
+              <option value="cannotbe" disabled selected>Choose Castle Health</option>
+              <option value="200">200</option>
+              <option value="400">400</option>
+              <option value="600">600</option>
+              <option value="800">800</option>
+              <option value="1000">1000</option>
+              <option value="1500">1500</option>
+            </select>
             <div>
               <button onClick={startgame} className='text-white font-bold bg-green-500 py-2 px-4 rounded-[15px] mx-8'>Start Game</button>
               <button onClick={endgame} className='text-white font-bold bg-red-500 px-4 py-2 rounded-[15px]'>End Game</button>
@@ -856,8 +1114,10 @@ let gameendedvariable = false;
           </div>
 
           {/* room opens for game joiner after clicking join game */}
-          <div className='lobby hidden w-[90%] h-[60vh] bg-blue-400 fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2' ref={joinergameroomref}>
+          <div className='lobby hidden w-[90%] h-[60vh] bg-blue-400 fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-[15px]' ref={joinergameroomref}>
             <p className='font-bold text-[1.5rem] text-center'>Waiting for game leader to start the game</p>
+            <div ref={joinergameroomrefpeople}></div>
+            <button onClick={leavegame} className='bg-red-400 text-white font-bold rounded-[15px] px-4 py-2 ml-8'>Leave Game</button>
           </div>
 
         </div>

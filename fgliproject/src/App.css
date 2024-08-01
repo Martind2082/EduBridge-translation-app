@@ -1,6 +1,3 @@
-/* html {
-    /* padding: 0.5rem; */
-/* } */
 
 .arrow {
     position: fixed;
@@ -10,10 +7,10 @@
 }
 @keyframes flyInFromLeft {
     0% {
-        transform: translateX(12rem);
+        transform: translateX(22rem);
     }
     100% {
-        transform: translateX(37rem);
+        transform: translateX(50rem);
     }
 }
 
@@ -25,10 +22,10 @@
 }
 @keyframes flyInFromRight {
     0% {
-        transform: translateX(37rem);
+        transform: translateX(50rem);
     }
     100% {
-        transform: translateX(10rem);
+        transform: translateX(22rem);
     }
 }
 
