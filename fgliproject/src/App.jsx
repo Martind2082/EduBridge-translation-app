@@ -39,7 +39,9 @@ function App() {
   const castlehealthref = useRef();
   const learnref = useRef();
   const joinergameroomrefpeople = useRef();
+  const watchquizletvideoref = useRef();
   let quizletdata;
+  let quizlettitle;
 
   function signinwithgoogle() {
     const provider = new GoogleAuthProvider();
@@ -63,6 +65,17 @@ function App() {
       return;
     }
     gethelpfulvideosbuttonref.current.textContent = "Loading...";
+    if (youtubevideosref.current.children[0].src.length != 0) {
+      youtubevideosref.current.children[4].remove();
+      youtubevideosref.current.children[0].src = "";
+      youtubevideosref.current.children[0].style = "height: 0px";
+      youtubevideosref.current.children[1].src = "";
+      youtubevideosref.current.children[1].style = "height: 0px";
+      youtubevideosref.current.children[2].src = "";
+      youtubevideosref.current.children[2].style = "height: 0px";
+      youtubevideosref.current.children[3].src = "";
+      youtubevideosref.current.children[3].style = "height: 0px";
+    }
     const options = {
       method: 'GET',
       url: "http://localhost:8000/youtube",
@@ -74,6 +87,7 @@ function App() {
         let code1 = response.data.arraylinks[0].split('&')[0].split('=')[1];
         let code2 = response.data.arraylinks[1].split('&')[0].split('=')[1];
         let code3 = response.data.arraylinks[2].split('&')[0].split('=')[1];
+        let code4 = response.data.arraylinks[3].split('&')[0].split('=')[1];
         youtubevideosref.current.children[0].src = `https://www.youtube.com/embed/${code1}`;
         youtubevideosref.current.children[0].style = "width: 50%; height: 20rem; margin-bottom: 1rem;";
 
@@ -82,6 +96,9 @@ function App() {
 
         youtubevideosref.current.children[2].src = `https://www.youtube.com/embed/${code3}`;
         youtubevideosref.current.children[2].style = "width: 50%; height: 20rem; margin-bottom: 1rem;";
+
+        youtubevideosref.current.children[3].src = `https://www.youtube.com/embed/${code4}`;
+        youtubevideosref.current.children[3].style = "width: 50%; height: 20rem; margin-bottom: 1rem;";
 
         let button = document.createElement('button');
         button.textContent = "Clear Videos";
@@ -94,6 +111,8 @@ function App() {
           youtubevideosref.current.children[1].style = "height: 0px";
           youtubevideosref.current.children[2].src = "";
           youtubevideosref.current.children[2].style = "height: 0px";
+          youtubevideosref.current.children[3].src = "";
+          youtubevideosref.current.children[3].style = "height: 0px";
         }
         youtubevideosref.current.append(button);
 
@@ -120,8 +139,12 @@ function App() {
         data.current.textContent = "";
         console.log(response);
         quizletdata = response.data.quizletinfo;
+        quizlettitle = response.data.title;
         setDoc(doc(db, User.email, "data"), {
-          data: quizletdata
+          data: quizletdata,
+        })
+        setDoc(doc(db, User.email, "title"), {
+          title: quizlettitle
         })
 
         let container = document.createElement('div');
@@ -335,7 +358,6 @@ let gameendedvariable = false;
           document.querySelectorAll('.lobby')[0].style.display = "none";
           document.querySelectorAll('.lobby')[1].style.display = "none";
 
-          console.log("Opponent: ", Opponent);
           getDoc(doc(db, `game ${Leader}`, Opponent)).then(data => {
             if (gameended != "true" && data.data().health <= 0) {
               if (gameroomref.current.style.display == "none") {
@@ -343,12 +365,12 @@ let gameendedvariable = false;
               }
 
               gameroomref.current.style.display = "none";
-              updateDoc(doc(db, `game ${User.email}`, User.email), {
-                active: "false"
-              })
-              updateDoc(doc(db, `game ${User.email}`, Opponent), {
-                active: "false"
-              })
+              // updateDoc(doc(db, `game ${User.email}`, User.email), {
+              //   active: "false"
+              // })
+              // updateDoc(doc(db, `game ${User.email}`, Opponent), {
+              //   active: "false"
+              // })
               if (Leader == User.email) {
                 document.querySelectorAll('.lobby')[0].style.display = "block";
               } else {
@@ -365,12 +387,12 @@ let gameendedvariable = false;
               // if (gameroomref.current.style.display == "none") {
               //   return;
               // }
-              updateDoc(doc(db, `game ${User.email}`, User.email), {
-                active: "false",
-              })
-              updateDoc(doc(db, `game ${User.email}`, Opponent), {
-                active: "false",
-              })
+              // updateDoc(doc(db, `game ${User.email}`, User.email), {
+              //   active: "false",
+              // })
+              // updateDoc(doc(db, `game ${User.email}`, Opponent), {
+              //   active: "false",
+              // })
               gameroomref.current.style.display = "none";
               if (Leader == User.email) {
                 document.querySelectorAll('.lobby')[0].style.display = "block";
@@ -382,7 +404,7 @@ let gameendedvariable = false;
             }
             playerhealthref.current.textContent = data.data().health;
               setTimeout(() => {
-                if (document.body.children[document.body.children.length - 1].classList[0] !== "arrow") {
+                if (document.body.children[document.body.children.length - 1].classList[0] !== "arrow" && data.data().health != castlehealthref.current.value) {
                   let arrow = document.createElement('img');
                   arrow.src = "../images/arrowleft.png";
                   arrow.classList.add('arrowatyou');
@@ -582,6 +604,7 @@ let gameendedvariable = false;
           main.append(answerbank);
           testref.current.append(main);
           let button = document.createElement('button');
+          button.style = "padding: 0.3rem; background: lightblue; border-radius: 10px";
           button.textContent = "Check";
           main.append(button);
           button.onclick = () => {
@@ -730,8 +753,27 @@ let gameendedvariable = false;
   function translate() {
     let apiurl = `https://api.mymemory.translated.net/get?q=${translateinputref.current.value}&langpair=${translatefromref.current.value}|${translatetoref.current.value}`;
     axios.get(apiurl).then(res => {
-      translateoutputref.current.value = res.data.responseData.translatedText;
+      if (res.data.responseData.translatedText == "PLEASE SELECT TWO DISTINCT LANGUAGES") {
+        translateoutputref.current.value = translateinputref.current.value
+      } else {
+        translateoutputref.current.value = res.data.responseData.translatedText;
+      }
     })
+  }
+  function watchquizletvideo() {
+    window.scrollTo(0, 0);
+    if (quizlettitle != undefined) {
+      translateinputref.current.value = quizlettitle
+    } else {
+      if (data.current.children.length > 0) {
+        getDoc(doc(db, User.email, "title")).then(title => {
+          translateinputref.current.value = title.data().title
+        })
+
+      } else {
+        return;
+      }
+    }
   }
   useEffect(() => {
     setTimeout(() => {
@@ -794,19 +836,22 @@ let gameendedvariable = false;
   }, [User])
 
   function startgame() {
+    setgameended("");
     updateDoc(doc(db, `game ${User.email}`, User.email), {
-      health: castlehealthref.current.value
+      health: castlehealthref.current.value,
+      active: "true"
     })
     updateDoc(doc(db, `game ${User.email}`, Opponent), {
-      health: castlehealthref.current.value
+      health: castlehealthref.current.value,
+      active: "true"
     })
-    onSnapshot(collection(db, `game ${User.email}`), (snapshot) => {
-      snapshot.docs.forEach(person => {
-        updateDoc(doc(db, `game ${User.email}`, person.data().email), {
-          active: "true",
-        })
-      })
-    })
+    // const unsub = onSnapshot(collection(db, `game ${User.email}`), (snapshot) => {
+    //   snapshot.docs.forEach(person => {
+    //     updateDoc(doc(db, `game ${User.email}`, person.data().email), {
+    //       active: "true",
+    //     })
+    //   })
+    // })
   }
 
   function endgame() {
@@ -931,6 +976,9 @@ let gameendedvariable = false;
           number: i
         })
       }
+      function removestar(stardiv) {
+        deleteDoc(doc(db, `star ${User.email}`, stardiv))
+      }
       onSnapshot(collection(db, `star ${User.email}`), (snapshot) => {
         starred.textContent = "";
         snapshot.docs.forEach(doc => {
@@ -948,9 +996,8 @@ let gameendedvariable = false;
           starred.append(div);
 
           remove.onclick = () => {
-            deleteDoc(doc(db, `star ${User.email}`, term.textContent))
+            removestar(term.textContent);
           }
-
         })
       })
   
@@ -1080,6 +1127,7 @@ let gameendedvariable = false;
             <iframe className='h-0' allowFullScreen></iframe>
             <iframe className='h-0' allowFullScreen></iframe>
             <iframe className='h-0' allowFullScreen></iframe>
+            <iframe className='h-0' allowFullScreen></iframe>
           </div>
 
           <div className='w-[90%] ml-[5%] text-[1.5rem] text-center mt-8 mb-4'>Free alternative to Quizlet premium! Enter the link of the quizlet you want to study and study for free. Includes a study game you can play with a friend where the goal is to destroy your friend's castle by answering questions correctly.</div>
@@ -1090,6 +1138,7 @@ let gameendedvariable = false;
           <div className='mt-8 mb-4 text-[1.5rem] text-center'>Flashcards</div>
           <div className='border-2 border-black w-[80%] ml-[10%] rounded-[20px] mb-8 flex flex-col items-center h-[20rem] overflow-auto' ref={data}></div>
 
+          <button onClick={watchquizletvideo} ref={watchquizletvideoref} className='bg-orange-400 text-white font-bold rounded-[15px] px-12 py-2 block mb-4 ml-8'>Watch Video</button>
           <button onClick={test} className='bg-blue-500 font-bold ml-8 px-4 py-2 rounded-[15px] text-white mb-4'>Test</button>
           <button onClick={learn} className='bg-blue-500 font-bold ml-4 px-4 py-2 rounded-[15px] text-white mb-4'>Learn</button>
           <br></br>

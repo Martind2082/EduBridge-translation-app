@@ -10,12 +10,15 @@ const puppeteer = require('puppeteer');
 const port = 8000;
 app.listen(port, () => console.log(port));
 
-let quizletinfo;
+let infoandtitle;
 app.get('/results', (req, res) => {
     let link = req.query.link;
     action(link)
         .then(() => {
-            res.send({quizletinfo: quizletinfo});
+            res.send({
+                quizletinfo: infoandtitle[0],
+                title: infoandtitle[1]
+            });
         })
 })
 
@@ -52,16 +55,18 @@ async function action(link) {
         })
     const getinfo = await page.evaluate(() => {
         const info = document.querySelectorAll('.TermText');
+        const title = document.querySelectorAll('h1')[0];
         let arr = [];
         for (let i = 0; i < info.length; i++) {
             arr.push(info[i].innerText);
         }
-        return arr;
+        return [arr, title.textContent];
     })
-    quizletinfo = getinfo;
-    console.log('info', quizletinfo);
+    infoandtitle = getinfo;
+    console.log('info', getinfo[0]);
+    console.log(getinfo[1])
     browser.close();
-    return quizletinfo;
+    return getinfo;
 }
 
 
@@ -83,6 +88,7 @@ async function getyoutube(link) {
         arr.push(info[0].children[0].children[0].children[0].href);
         arr.push(info[1].children[0].children[0].children[0].href);
         arr.push(info[2].children[0].children[0].children[0].href);
+        arr.push(info[3].children[0].children[0].children[0].href);
         return arr;
     })
     browser.close();
