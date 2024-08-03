@@ -9,8 +9,6 @@ import { FaArrowRight} from "react-icons/fa";
 import { HiXMark } from "react-icons/hi2";
 
 
-
-
 function App() {
   const [User, setUser] = useState('');
   const [Leader, setLeader] = useState('');
@@ -47,18 +45,19 @@ function App() {
     const provider = new GoogleAuthProvider();
     signInWithPopup(auth, provider);
   }
-    //sets user state if user is signedin
-    useEffect(() => {
-      const unsub = onAuthStateChanged(auth, user => {
-        setUser(user);
-      })
-      return unsub;
+  //sets user state if user is signedin
+  useEffect(() => {
+    const unsub = onAuthStateChanged(auth, user => {
+      setUser(user);
     })
+    return unsub;
+  })
 
   function signout() {
     signOut(auth);
   }
   
+  //generates youtube video for your related topic
   function getyoutubevideo() {
     let search = translateoutputref.current.value;
     if (search.length == 0) {
@@ -121,6 +120,7 @@ function App() {
       })
   }
 
+  //loads quizlet flashcard data after enting link
   function submit() {
     if (link.current.value.length == 0) {
       return;
@@ -331,6 +331,7 @@ function App() {
     })
   }
 
+//if the game has sended, set active to false
 useEffect(() => {
   if (gameended == "true") {
     updateDoc(doc(db, `game ${User.email}`, User.email), {
@@ -342,6 +343,7 @@ useEffect(() => {
   }
 }, [gameended])
 
+//once active is true on firebase, this set of code will run and trigger the game
 let gameendedvariable = false;
   useEffect(() => {
     if (Leader != "" && Opponent != "" && gameended != "true") {
@@ -358,6 +360,7 @@ let gameendedvariable = false;
           document.querySelectorAll('.lobby')[0].style.display = "none";
           document.querySelectorAll('.lobby')[1].style.display = "none";
 
+          //checks to see if any castle has gone to 0 health to end the game
           getDoc(doc(db, `game ${Leader}`, Opponent)).then(data => {
             if (gameended != "true" && data.data().health <= 0) {
               if (gameroomref.current.style.display == "none") {
@@ -365,12 +368,6 @@ let gameendedvariable = false;
               }
 
               gameroomref.current.style.display = "none";
-              // updateDoc(doc(db, `game ${User.email}`, User.email), {
-              //   active: "false"
-              // })
-              // updateDoc(doc(db, `game ${User.email}`, Opponent), {
-              //   active: "false"
-              // })
               if (Leader == User.email) {
                 document.querySelectorAll('.lobby')[0].style.display = "block";
               } else {
@@ -384,15 +381,6 @@ let gameendedvariable = false;
           })
           getDoc(doc(db, `game ${Leader}`, User.email)).then(data => {
             if (gameended != "true" && data.data().health <= 0) {
-              // if (gameroomref.current.style.display == "none") {
-              //   return;
-              // }
-              // updateDoc(doc(db, `game ${User.email}`, User.email), {
-              //   active: "false",
-              // })
-              // updateDoc(doc(db, `game ${User.email}`, Opponent), {
-              //   active: "false",
-              // })
               gameroomref.current.style.display = "none";
               if (Leader == User.email) {
                 document.querySelectorAll('.lobby')[0].style.display = "block";
@@ -416,6 +404,7 @@ let gameendedvariable = false;
               }, 300);
           })
 
+          //loads the questions for the game
           getDoc(doc(db, Leader, "data")).then((data) => {
 
             let oddIndexes = data.data().data.map((_, index) => index).filter(index => index % 2 !== 0);
@@ -501,8 +490,8 @@ let gameendedvariable = false;
       })
     }
   })
-  //Leader, Opponent, gameended
 
+  //activates test mode for studying
   function test() {
       if (!quizletdata) {
         return;
@@ -651,6 +640,7 @@ let gameendedvariable = false;
       }
   }
 
+  //list of countries for the translator api
   const countries = {
     "am-ET": "Amharic",
     "ar-SA": "Arabic",
@@ -750,6 +740,8 @@ let gameendedvariable = false;
     "yi-YD": "Yiddish",
     "zu-ZA": "Zulu"
 }
+
+//activates the translator api and translates inputed text
   function translate() {
     let apiurl = `https://api.mymemory.translated.net/get?q=${translateinputref.current.value}&langpair=${translatefromref.current.value}|${translatetoref.current.value}`;
     axios.get(apiurl).then(res => {
@@ -760,6 +752,7 @@ let gameendedvariable = false;
       }
     })
   }
+  //puts the quizlet title up in the translator for user to watch video
   function watchquizletvideo() {
     window.scrollTo(0, 0);
     if (quizlettitle != undefined) {
@@ -775,6 +768,7 @@ let gameendedvariable = false;
       }
     }
   }
+  //when page loads, the different language options will load and the quizlet flashcard data will load
   useEffect(() => {
     setTimeout(() => {
       if (!User) {
@@ -835,6 +829,7 @@ let gameendedvariable = false;
     }, 800);
   }, [User])
 
+  //after the game creator hits the start game button, active is set to true and the game fires
   function startgame() {
     setgameended("");
     updateDoc(doc(db, `game ${User.email}`, User.email), {
@@ -845,15 +840,8 @@ let gameendedvariable = false;
       health: castlehealthref.current.value,
       active: "true"
     })
-    // const unsub = onSnapshot(collection(db, `game ${User.email}`), (snapshot) => {
-    //   snapshot.docs.forEach(person => {
-    //     updateDoc(doc(db, `game ${User.email}`, person.data().email), {
-    //       active: "true",
-    //     })
-    //   })
-    // })
   }
-
+  //ends the game room
   function endgame() {
     deleteDoc(doc(db, "games", User.email))
     document.querySelectorAll('.lobby')[0].style.display = "none";
@@ -867,7 +855,7 @@ let gameendedvariable = false;
       })
     }, 3000);
   }
-
+  //activates learn mode for studying
   function learn() {
     if (!quizletdata) {
       return;
@@ -969,7 +957,7 @@ let gameendedvariable = false;
       }
       
 
-
+      //handles putting starred terms in database and displaying them to user
       star.onclick = () => {
         setDoc(doc(db, `star ${User.email}`, learndata[i]), {
           term: learndata[i],
@@ -1059,7 +1047,7 @@ let gameendedvariable = false;
         }
       }
   }
-
+  //for the person who joined the game to leave the game
   function leavegame() {
     deleteDoc(doc(db, `game ${Leader}`, User.email))
     joinergameroomref.current.style.display = "none";
@@ -1069,6 +1057,7 @@ let gameendedvariable = false;
     <div>
       {
         !User ? <div>
+          {/* div shows if user is not signed into google */}
           <div>
             <img className='absolute w-[100%] h-[100vh]' src="https://img.freepik.com/free-vector/watercolor-international-human-solidarity-day-background_23-2149837203.jpg?t=st=1722405069~exp=1722408669~hmac=2faeb2906c688071cee6bb5b1e97461922a42c64df22a0f90ed54a04bf4da6bb&w=1060"/>
             <div className='absolute w-[70%] h-[50vh] flex flex-col items-center justify-center left-1/2 top-[40%] -translate-x-1/2 -translate-y-1/2'>
@@ -1079,7 +1068,7 @@ let gameendedvariable = false;
             </div>
           </div>
         </div> :
-        <div>
+        <div className='bg-gradient-to-br'>
           {/* this div will show when the game starts */}
           <div className='hidden fixed w-[100%] h-[101vh] bg-gray-400 mt-[-2%]' ref={gameroomref}>
             <div ref={gameroomquestionsref}></div>
@@ -1098,9 +1087,10 @@ let gameendedvariable = false;
               </div>
             </div>
           </div>
-
+          {/* these divs will show when user opens learn mode or test mode */}
           <div ref={learnref} className='hidden fixed w-full bg-gray-300 h-[100vh] pt-8 z-20 mt-[-2%] overflow-x-hidden overflow-y-scroll'></div>
           <div ref={testref} className='hidden fixed w-full bg-gray-300 h-[99vh] overflow-y-scroll overflow-x-hidden pt-8 mt-[-2%]'></div>
+          
           <div className='flex justify-between w-full h-8 items-center mb-4 mt-4'>
             <div className='ml-4 flex items-center'>
               <img className='rounded-[50%] w-8' src={User.photoURL}/>
@@ -1109,6 +1099,7 @@ let gameendedvariable = false;
             <button onClick={signout} className='bg-gray-400 py-1 px-2.5 rounded-[12px] mr-4'>Sign out</button>
           </div>
 
+          {/* these divs are for the translation section */}
           <div className='text-center w-[80%] ml-[10%] mb-4 text-[1.5rem] mt-8'>If you are more comfortable in a language other from English, translate a topic into a language that you are comfortable with and generate videos related to that topic in your preferred language!</div>
           <div className='w-[70%] flex flex-col items-center bg-gradient-to-r from-blue-400 to-blue-300 ml-[15%] pt-4 rounded-[20px] mb-8'>
             <div className='w-[90%] flex justify-evenly'>
@@ -1129,7 +1120,9 @@ let gameendedvariable = false;
             <iframe className='h-0' allowFullScreen></iframe>
             <iframe className='h-0' allowFullScreen></iframe>
           </div>
+          <div className='w-full h-[0.2rem] bg-gray-400'></div>
 
+          {/* these divs are for the quizlet section */}
           <div className='w-[90%] ml-[5%] text-[1.5rem] text-center mt-8 mb-4'>Free alternative to Quizlet premium! Enter the link of the quizlet you want to study and study for free. Includes a study game you can play with a friend where the goal is to destroy your friend's castle by answering questions correctly.</div>
           <div className='flex ml-8'>
               <input className='border-black border border-solid w-[70%] rounded-[5px] pl-2 py-[0.5rem]' ref={link} placeholder='Enter Quizlet Link'/>
@@ -1138,6 +1131,7 @@ let gameendedvariable = false;
           <div className='mt-8 mb-4 text-[1.5rem] text-center'>Flashcards</div>
           <div className='border-2 border-black w-[80%] ml-[10%] rounded-[20px] mb-8 flex flex-col items-center h-[20rem] overflow-auto' ref={data}></div>
 
+          {/* different study options */}
           <button onClick={watchquizletvideo} ref={watchquizletvideoref} className='bg-orange-400 text-white font-bold rounded-[15px] px-12 py-2 block mb-4 ml-8'>Watch Video</button>
           <button onClick={test} className='bg-blue-500 font-bold ml-8 px-4 py-2 rounded-[15px] text-white mb-4'>Test</button>
           <button onClick={learn} className='bg-blue-500 font-bold ml-4 px-4 py-2 rounded-[15px] text-white mb-4'>Learn</button>
